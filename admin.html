@@ -3,200 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin - Quản Lý Info</title>
+    <title>Admin - Quản Lý Dữ Liệu</title>
     <style>
-        :root { --primary: #4a90e2; --success: #2ed573; --danger: #ff4757; --dark: #2f3542; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f1f2f6; margin: 0; padding: 15px; }
-        .container { max-width: 100%; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        :root { --primary: #4a90e2; --success: #2ed573; --danger: #ff4757; --dark: #2f3542; --purple: #6c5ce7; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
-        h2 { color: var(--dark); font-size: 1.2rem; border-left: 4px solid var(--primary); padding-left: 10px; }
-        
-        textarea { 
-            width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; 
-            font-family: monospace; box-sizing: border-box; font-size: 13px; background: #fafafa;
-        }
-        
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; margin: 5px 0; font-size: 14px; }
+        /* Cấu hình Token & Repo */
+        .setup-box { background: #fff5e6; padding: 15px; border-radius: 10px; border: 1px solid #ffeaa7; margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; margin-bottom: 12px; }
+        input:focus { border-color: var(--primary); outline: none; background: #fff; }
+
+        /* Nút bấm */
+        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; transition: 0.2s; font-size: 15px; }
         .btn-load { background: var(--dark); }
-        .btn-add { background: var(--success); }
-        .btn-copy { background: var(--primary); margin-top: 15px; }
+        .btn-add { background: var(--success); margin-bottom: 15px; }
+        .btn-save-git { background: var(--purple); font-size: 16px; margin-top: 20px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); }
+        .btn:active { transform: scale(0.97); }
 
-        .table-wrapper { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; min-width: 300px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
-        th { background: #f8f9fa; }
-        
-        .action-btns { display: flex; gap: 5px; }
-        .action-btns button { padding: 6px; border-radius: 4px; border: none; color: white; font-size: 11px; flex: 1; }
-        .btn-edit { background: #ffa502; }
-        .btn-del { background: var(--danger); }
+        /* Danh sách thành viên */
+        .table-container { margin-top: 10px; border-top: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        td { padding: 15px 8px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-mini { padding: 8px 12px; border-radius: 6px; font-size: 12px; color: white; border: none; font-weight: bold; }
 
-        /* Modal cho Mobile */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 10px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .modal-content input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; /* Chặn zoom khi gõ trên iPhone */ }
-        
+        /* Modal nhập liệu */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; }
+        .date-row { display: flex; gap: 8px; }
+        .date-row input { text-align: center; }
+
         .hidden { display: none !important; }
-        #outputCode { background: #eef2f7; color: #333; height: 150px; }
+        .status-bar { font-size: 12px; text-align: center; margin-top: 10px; padding: 8px; border-radius: 5px; display: none; }
+        .status-running { display: block; background: #e1f5fe; color: #0288d1; }
+        .status-success { display: block; background: #e8f5e9; color: #2e7d32; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>1. Dán code từ file info.js</h2>
-    <textarea id="rawCode" placeholder="Dán code vào đây..."></textarea>
-    <button class="btn btn-load" onclick="parseCode()">XỬ LÝ DỮ LIỆU</button>
+    <div class="setup-box">
+        <label>🔑 GitHub Token (Giữ bí mật):</label>
+        <input type="password" id="gitToken" placeholder="Dán mã ghp_... của bạn" onchange="saveConfig()">
+        
+        <label>📁 Đường dẫn Repo (Ví dụ: hothiptv/Thong-tinPlay):</label>
+        <input type="text" id="repoPath" placeholder="username/repo-name" onchange="saveConfig()">
+    </div>
+
+    <h2>Dữ liệu hiện tại</h2>
+    <textarea id="rawCode" placeholder="Dán nội dung file info.js vào đây để bắt đầu..."></textarea>
+    <button class="btn btn-load" onclick="handleParse()">ĐỌC DỮ LIỆU</button>
 
     <div id="managerSection" class="hidden">
-        <hr>
-        <button class="btn btn-add" onclick="openModal()">+ THÊM NGƯỜI MỚI</button>
+        <hr style="margin: 25px 0; border: 0; border-top: 2px dashed #eee;">
         
-        <div class="table-wrapper">
-            <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th>Tên</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin:0">Danh sách</h3>
+            <button class="btn btn-add" style="width:auto; margin:0; padding: 8px 15px;" onclick="openModal()">+ Thêm mới</button>
+        </div>
+        
+        <div class="table-container">
+            <table><tbody id="tbody"></tbody></table>
         </div>
 
-        <h2 style="margin-top:25px;">2. Code mới để cập nhật</h2>
-        <textarea id="outputCode" readonly></textarea>
-        <button class="btn btn-copy" onclick="copyToClipboard()">SAO CHÉP CODE</button>
+        <button class="btn btn-save-git" onclick="handlePush()">🚀 CẬP NHẬT LÊN GITHUB</button>
+        <div id="statusMsg" class="status-bar"></div>
     </div>
 </div>
 
 <div id="userModal" class="modal hidden">
     <div class="modal-content">
-        <h3 id="modalTitle" style="margin-top:0">Thông tin</h3>
-        <input type="text" id="fTen" placeholder="Tên">
-        <input type="text" id="fNgay" placeholder="Năm sinh">
-        <input type="text" id="fTruong" placeholder="Trường">
-        <input type="text" id="fNghe" placeholder="Nghề nghiệp">
-        <input type="text" id="fThich" placeholder="Sở thích">
-        <input type="text" id="fBietDanh" placeholder="Biệt danh">
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="btn btn-add" style="margin:0" onclick="saveUser()">LƯU</button>
-            <button class="btn btn-del" style="margin:0; background: #999;" onclick="closeModal()">HỦY</button>
+        <h3 id="modalTitle" style="margin-top:0; color:var(--dark)">Thông tin</h3>
+        
+        <label>Họ và tên:</label>
+        <input type="text" id="fTen" placeholder="ví dụ: nguyễn văn a">
+        
+        <label>Ngày sinh:</label>
+        <div class="date-row">
+            <input type="number" id="fDay" placeholder="Ngày" oninput="if(value.length>2)value=value.slice(0,2)">
+            <input type="number" id="fMonth" placeholder="Tháng" oninput="if(value.length>2)value=value.slice(0,2)">
+            <input type="number" id="fYear" placeholder="Năm" oninput="if(value.length>4)value=value.slice(0,4)">
+        </div>
+
+        <label>Nghề nghiệp:</label>
+        <input type="text" id="fNghe" placeholder="Kỹ sư, học sinh...">
+        
+        <label>Trường học:</label>
+        <input type="text" id="fTruong" placeholder="Tên trường">
+        
+        <label>Sở thích & Biệt danh:</label>
+        <input type="text" id="fThich" placeholder="Đá bóng, xem phim...">
+        <input type="text" id="fBietDanh" placeholder="Tên thường gọi">
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn btn-add" style="margin:0; flex:1" onclick="submitUser()">XÁC NHẬN</button>
+            <button class="btn" style="margin:0; flex:1; background:#b2bec3" onclick="closeModal()">HỦY</button>
         </div>
     </div>
 </div>
 
 <script>
-    let currentData = [];
-    let editIndex = -1;
+    let userData = [];
+    let editingIdx = -1;
 
-    // Cách xử lý mới: Dùng regex để bóc tách mảng dữ liệu
-    function parseCode() {
-        let raw = document.getElementById('rawCode').value;
+    // Tự động load cấu hình từ máy
+    window.onload = () => {
+        document.getElementById('gitToken').value = localStorage.getItem('gh_token') || '';
+        document.getElementById('repoPath').value = localStorage.getItem('gh_repo') || '';
+    };
+
+    function saveConfig() {
+        localStorage.setItem('gh_token', document.getElementById('gitToken').value.trim());
+        localStorage.setItem('gh_repo', document.getElementById('repoPath').value.trim());
+    }
+
+    function capitalize(s) {
+        return s.toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+    }
+
+    function handleParse() {
+        const raw = document.getElementById('rawCode').value;
         try {
-            // Tìm mảng bắt đầu từ [ và kết thúc là ]
             const start = raw.indexOf('[');
             const end = raw.lastIndexOf(']');
-            if (start === -1 || end === -1) throw new Error();
-
-            let jsonStr = raw.substring(start, end + 1);
-            
-            // Chuyển đổi từ định dạng Object JS sang JSON chuẩn để parse
-            // 1. Thêm ngoặc kép cho key, 2. Đổi ngoặc đơn thành kép
-            let validJson = jsonStr
-                .replace(/([a-zA-Z0-9_]+):/g, '"$1":') 
-                .replace(/'/g, '"')
-                .replace(/,(\s*[\}\]])/g, '$1'); // Xóa dấu phẩy thừa
-
-            currentData = JSON.parse(validJson);
+            const cleanJson = raw.substring(start, end + 1)
+                .replace(/([a-zA-Z0-9_]+):/g, '"$1":').replace(/'/g, '"').replace(/,(\s*[\}\]])/g, '$1');
+            userData = JSON.parse(cleanJson);
             renderTable();
             document.getElementById('managerSection').classList.remove('hidden');
-            updateOutput();
-        } catch (e) {
-            alert("Lỗi: Không đọc được dữ liệu. Hãy dán đúng phần [ { ... } ]");
-        }
+        } catch(e) { alert("Lỗi: Dữ liệu dán vào không đúng định dạng file info.js!"); }
     }
 
     function renderTable() {
-        const tbody = document.querySelector('#dataTable tbody');
-        tbody.innerHTML = '';
-        currentData.forEach((user, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><b>${user.ten}</b><br><small>${user.ngheNghiep}</small></td>
+        const b = document.getElementById('tbody');
+        b.innerHTML = userData.map((u, i) => `
+            <tr>
+                <td><b>${u.ten}</b><br><small color="#666">${u.ngheNghiep}</small></td>
                 <td class="action-btns">
-                    <button class="btn-edit" onclick="editUser(${index})">Sửa</button>
-                    <button class="btn-del" onclick="deleteUser(${index})">Xóa</button>
+                    <button class="btn-mini" style="background:#f1c40f" onclick="openEdit(${i})">Sửa</button>
+                    <button class="btn-mini" style="background:#e74c3c" onclick="handleDelete(${i})">Xóa</button>
                 </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            </tr>
+        `).join('');
     }
 
     function openModal() {
-        editIndex = -1;
-        document.getElementById('modalTitle').innerText = "Thêm người mới";
-        clearForm();
+        editingIdx = -1;
+        document.querySelectorAll('.modal-content input').forEach(i => i.value = '');
         document.getElementById('userModal').classList.remove('hidden');
     }
 
-    function editUser(index) {
-        editIndex = index;
-        const u = currentData[index];
-        document.getElementById('modalTitle').innerText = "Sửa thông tin";
-        document.getElementById('fTen').value = u.ten || "";
-        document.getElementById('fNgay').value = u.ngaySinh || "";
-        document.getElementById('fTruong').value = u.truong || "";
-        document.getElementById('fNghe').value = u.ngheNghiep || "";
-        document.getElementById('fThich').value = u.soThich || "";
-        document.getElementById('fBietDanh').value = u.bietDanh || "";
+    function openEdit(i) {
+        editingIdx = i;
+        const u = userData[i];
+        document.getElementById('fTen').value = u.ten;
+        const p = u.ngaySinh.split('/');
+        if(p.length === 3) {
+            document.getElementById('fDay').value = p[0];
+            document.getElementById('fMonth').value = p[1];
+            document.getElementById('fYear').value = p[2];
+        } else { document.getElementById('fYear').value = u.ngaySinh; }
+        document.getElementById('fNghe').value = u.ngheNghiep;
+        document.getElementById('fTruong').value = u.truong;
+        document.getElementById('fThich').value = u.soThich;
+        document.getElementById('fBietDanh').value = u.bietDanh;
         document.getElementById('userModal').classList.remove('hidden');
     }
 
-    function saveUser() {
-        const user = {
-            ten: document.getElementById('fTen').value,
-            ngaySinh: document.getElementById('fNgay').value,
+    function submitUser() {
+        const name = capitalize(document.getElementById('fTen').value.trim());
+        const d = document.getElementById('fDay').value.padStart(2, '0');
+        const m = document.getElementById('fMonth').value.padStart(2, '0');
+        const y = document.getElementById('fYear').value;
+        const date = (d !== '00' && m !== '00') ? `${d}/${m}/${y}` : y;
+
+        const obj = { 
+            ten: name, ngaySinh: date, 
             truong: document.getElementById('fTruong').value,
             ngheNghiep: document.getElementById('fNghe').value,
             soThich: document.getElementById('fThich').value,
             bietDanh: document.getElementById('fBietDanh').value
         };
 
-        if (editIndex === -1) currentData.push(user);
-        else currentData[editIndex] = user;
-
-        closeModal();
-        renderTable();
-        updateOutput();
+        if(editingIdx === -1) userData.push(obj); else userData[editingIdx] = obj;
+        closeModal(); renderTable();
     }
 
-    function deleteUser(index) {
-        if(confirm("Bạn chắc chắn muốn xóa " + currentData[index].ten + "?")) {
-            currentData.splice(index, 1);
-            renderTable();
-            updateOutput();
-        }
-    }
-
-    function updateOutput() {
-        const codeOutput = `const userData = ${JSON.stringify(currentData, null, 4)};`;
-        document.getElementById('outputCode').value = codeOutput;
-    }
-
-    function copyToClipboard() {
-        const copyText = document.getElementById("outputCode");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); // Cho mobile
-        document.execCommand("copy");
-        alert("Đã sao chép code mới!");
+    function handleDelete(i) {
+        if(confirm(`Bạn muốn xóa ${userData[i].ten}?`)) { userData.splice(i, 1); renderTable(); }
     }
 
     function closeModal() { document.getElementById('userModal').classList.add('hidden'); }
-    function clearForm() {
-        const inputs = document.querySelectorAll('.modal-content input');
-        inputs.forEach(i => i.value = '');
+
+    async function handlePush() {
+        const token = localStorage.getItem('gh_token');
+        const repo = localStorage.getItem('gh_repo');
+        const status = document.getElementById('statusMsg');
+        
+        if(!token || !repo) return alert("Vui lòng kiểm tra lại Token và Repo!");
+
+        status.innerText = "⏳ Đang gửi yêu cầu cập nhật...";
+        status.className = "status-bar status-running";
+
+        const content = `const userData = ${JSON.stringify(userData, null, 4)};`;
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" },
+                body: JSON.stringify({ event_type: "update-data", client_payload: { new_content: content } })
+            });
+
+            if(res.ok) {
+                status.innerText = "✅ THÀNH CÔNG! Robot đang sửa file (đợi 30 giây).";
+                status.className = "status-bar status-success";
+            } else { throw new Error(); }
+        } catch(e) {
+            status.innerText = "❌ LỖI: Không thể gửi lệnh. Kiểm tra Token/Repo.";
+            status.className = "status-bar";
+            alert("Lỗi kết nối GitHub!");
+        }
     }
 </script>
-
 </body>
 </html>
