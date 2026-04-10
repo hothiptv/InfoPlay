@@ -1,0 +1,26 @@
+name: Update Info Data
+on:
+  repository_dispatch:
+    types: [update-data] # Robot sẽ thức dậy khi nhận tín hiệu này
+
+jobs:
+  update-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Update info.js
+        run: |
+          # Ghi nội dung mới mà Admin gửi lên vào file info.js
+          echo "${{ github.event.client_payload.new_content }}" > info.js
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "GitHub Action Robot"
+          git config --global user.email "action@github.com"
+          git add info.js
+          git commit -m "Admin đã cập nhật dữ liệu"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
