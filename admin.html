@@ -3,40 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hệ thống Quản trị Bảo mật</title>
+    <title>Hệ thống Quản trị Tự động</title>
     <style>
         :root { --primary: #4a90e2; --success: #2ed573; --danger: #ff4757; --dark: #2f3542; --purple: #6c5ce7; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .container { width: 95%; max-width: 500px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 10px; }
         
         /* Màn hình khóa PIN */
-        #lockScreen { text-align: center; }
-        .pin-display { font-size: 30px; letter-spacing: 15px; margin: 20px 0; color: var(--dark); height: 40px; }
+        .pin-display { font-size: 30px; letter-spacing: 15px; margin: 20px 0; color: var(--dark); height: 40px; text-align: center; }
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 250px; margin: auto; }
         .key { background: #eee; border: none; padding: 20px; font-size: 20px; font-weight: bold; border-radius: 50%; cursor: pointer; transition: 0.2s; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; margin: auto; }
         .key:active { background: #ccc; transform: scale(0.9); }
-        .key-del { background: #fab1a0; color: #d63031; }
 
-        /* Giao diện Admin (Ẩn lúc đầu) */
+        /* Giao diện Admin */
         .hidden { display: none !important; }
         .setup-box { background: #fff5e6; padding: 15px; border-radius: 10px; border: 1px solid #ffeaa7; margin-bottom: 20px; }
         label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
         input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; margin-bottom: 10px; }
-        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; }
+        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; font-size: 15px; }
         .btn-save-git { background: var(--purple); margin-top: 15px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); }
         
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .btn-mini { padding: 6px 10px; border-radius: 5px; color: white; border: none; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        td { padding: 15px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-mini { padding: 8px 12px; border-radius: 6px; color: white; border: none; font-size: 12px; font-weight: bold; margin-left: 5px; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 350px; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 380px; }
+        .status-bar { font-size: 13px; text-align: center; margin-top: 10px; padding: 10px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; display: none; }
     </style>
 </head>
 <body>
 
 <div id="lockScreen" class="container">
-    <h2 style="margin-top:0">Nhập mã PIN</h2>
+    <h2 style="text-align:center">Nhập mã PIN</h2>
     <div class="pin-display" id="pinDisplay">****</div>
     <div class="keypad">
         <button class="key" onclick="pressKey('1')">1</button>
@@ -48,49 +47,49 @@
         <button class="key" onclick="pressKey('7')">7</button>
         <button class="key" onclick="pressKey('8')">8</button>
         <button class="key" onclick="pressKey('9')">9</button>
-        <button class="key key-del" onclick="pressKey('C')">C</button>
+        <button class="key" style="background:#fab1a0" onclick="pressKey('C')">C</button>
         <button class="key" onclick="pressKey('0')">0</button>
         <button class="key" style="background:var(--success); color:white" onclick="checkPin()">✔</button>
     </div>
-    <p id="errorMsg" style="color:red; font-size:13px; margin-top:10px; display:none">Sai mã PIN!</p>
 </div>
 
 <div id="adminContent" class="container hidden">
     <div class="setup-box">
-        <label>🔑 TOKEN & REPO:</label>
-        <input type="password" id="gitToken" placeholder="Dán ghp_... vào đây" onchange="saveConf()">
-        <input type="text" id="repoPath" placeholder="hothiptv/Thong-tinPlay" onchange="saveConf()">
+        <label>🔑 CẤU HÌNH GITHUB (Chỉ nhập 1 lần):</label>
+        <input type="password" id="gitToken" placeholder="GitHub Token (ghp_...)" onchange="saveConf()">
+        <input type="text" id="repoPath" placeholder="username/repository" onchange="saveConf()">
     </div>
 
-    <textarea id="rawCode" placeholder="Dán file info.js vào đây..." style="height: 80px;"></textarea>
-    <button class="btn" style="background:var(--dark)" onclick="parseCode()">ĐỌC DỮ LIỆU</button>
+    <div id="statusMsg" class="status-bar"></div>
 
-    <div id="managerSection" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px">
-            <h3 style="margin:0">Danh sách</h3>
-            <button class="btn" style="background:var(--success); width:auto; padding:8px 15px" onclick="openModal()">+ Thêm</button>
+    <div id="managerSection">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0">Dữ liệu từ info.js</h3>
+            <button class="btn" style="background:var(--success); width:auto; padding:8px 15px" onclick="openModal()">+ Thêm mới</button>
         </div>
         <table><tbody id="tbody"></tbody></table>
+        
         <button class="btn btn-save-git" onclick="pushGit()">🚀 CẬP NHẬT LÊN GITHUB</button>
+        <p style="font-size: 11px; text-align:center; color:#666; margin-top:10px">Robot sẽ tự động ghi đè nội dung mới vào file info.js</p>
     </div>
 </div>
 
 <div id="userModal" class="modal hidden">
     <div class="modal-content">
         <h3>Thông tin người dùng</h3>
-        <input type="text" id="fTen" placeholder="Tên">
+        <input type="text" id="fTen" placeholder="Họ và tên">
         <div style="display:flex; gap:5px">
             <input type="number" id="fD" placeholder="Ngày">
             <input type="number" id="fM" placeholder="Tháng">
             <input type="number" id="fY" placeholder="Năm">
         </div>
         <input type="text" id="fNghe" placeholder="Nghề nghiệp">
-        <input type="text" id="fTruong" placeholder="Trường">
+        <input type="text" id="fTruong" placeholder="Trường học">
         <input type="text" id="fThich" placeholder="Sở thích">
         <input type="text" id="fBietDanh" placeholder="Biệt danh">
         <div style="display:flex; gap:10px">
-            <button class="btn" style="background:var(--success); flex:1" onclick="saveUser()">LƯU</button>
-            <button class="btn" style="background:#999; flex:1" onclick="closeModal()">HỦY</button>
+            <button class="btn" style="background:var(--success); flex:1" onclick="saveUser()">XÁC NHẬN</button>
+            <button class="btn" style="background:#b2bec3; flex:1" onclick="closeModal()">HỦY</button>
         </div>
     </div>
 </div>
@@ -101,57 +100,63 @@
     let userData = [];
     let editIdx = -1;
 
-    // PHẦN BẢO MẬT PIN
+    // 1. XỬ LÝ MÃ PIN & TỰ ĐỘNG ĐỌC FILE
     function pressKey(num) {
-        if(num === 'C') { pinInput = ""; }
-        else if(pinInput.length < 4) { pinInput += num; }
+        if(num === 'C') pinInput = ""; else if(pinInput.length < 4) pinInput += num;
         document.getElementById('pinDisplay').innerText = "*".repeat(pinInput.length) || "****";
-        if(pinInput.length === 4) { setTimeout(checkPin, 300); }
+        if(pinInput.length === 4) setTimeout(checkPin, 300);
     }
 
-    function checkPin() {
+    async function checkPin() {
         if(pinInput === CORRECT_PIN) {
             document.getElementById('lockScreen').classList.add('hidden');
             document.getElementById('adminContent').classList.remove('hidden');
-            // Sau khi mở khóa mới load token/repo
             document.getElementById('gitToken').value = localStorage.getItem('gh_token') || '';
             document.getElementById('repoPath').value = localStorage.getItem('gh_repo') || '';
+            autoFetchData(); // Tự động kết nối và đọc file info.js
         } else {
-            document.getElementById('errorMsg').style.display = 'block';
-            pinInput = "";
-            document.getElementById('pinDisplay').innerText = "****";
+            alert("Sai mã PIN!"); pinInput = ""; document.getElementById('pinDisplay').innerText = "****";
         }
     }
 
-    // PHẦN QUẢN LÝ DỮ LIỆU
-    function saveConf() {
-        localStorage.setItem('gh_token', document.getElementById('gitToken').value.trim());
-        localStorage.setItem('gh_repo', document.getElementById('repoPath').value.trim());
-    }
-
-    function parseCode() {
-        const raw = document.getElementById('rawCode').value;
+    async function autoFetchData() {
+        const status = document.getElementById('statusMsg');
+        status.style.display = "block";
+        status.innerText = "⏳ Đang kết nối file info.js...";
         try {
-            const start = raw.indexOf('['); const end = raw.lastIndexOf(']');
-            const json = raw.substring(start, end+1).replace(/([a-zA-Z0-9_]+):/g, '"$1":').replace(/'/g, '"').replace(/,(\s*[\}\]])/g, '$1');
-            userData = JSON.parse(json); render();
-            document.getElementById('managerSection').classList.remove('hidden');
-        } catch(e) { alert("Lỗi đọc dữ liệu!"); }
+            const res = await fetch(`info.js?t=${Date.now()}`);
+            const text = await res.text();
+            const start = text.indexOf('['); const end = text.lastIndexOf(']');
+            const json = text.substring(start, end+1).replace(/([a-zA-Z0-9_]+):/g, '"$1":').replace(/'/g, '"').replace(/,(\s*[\}\]])/g, '$1');
+            userData = JSON.parse(json);
+            render();
+            status.innerText = "✅ Đã tải dữ liệu thành công!";
+        } catch(e) {
+            status.innerText = "⚠️ Không thấy file info.js hoặc file rỗng.";
+            status.style.background = "#fff3e0";
+        }
     }
 
+    // 2. QUẢN LÝ DANH SÁCH
     function render() {
         document.getElementById('tbody').innerHTML = userData.map((u, i) => `
             <tr>
-                <td><b>${u.ten}</b></td>
+                <td><b>${u.ten}</b><br><small>${u.ngheNghiep}</small></td>
                 <td style="text-align:right">
-                    <button class="btn-mini" style="background:#ffa502" onclick="openEdit(${i})">Sửa</button>
-                    <button class="btn-mini" style="background:#ff4757" onclick="handleDel(${i})">Xóa</button>
+                    <button class="btn-mini" style="background:#f1c40f" onclick="openEdit(${i})">Sửa</button>
+                    <button class="btn-mini" style="background:#e74c3c" onclick="handleDel(${i})">Xóa</button>
                 </td>
             </tr>
         `).join('');
     }
 
+    function saveConf() {
+        localStorage.setItem('gh_token', document.getElementById('gitToken').value.trim());
+        localStorage.setItem('gh_repo', document.getElementById('repoPath').value.trim());
+    }
+
     function openModal() { editIdx = -1; clearForm(); document.getElementById('userModal').classList.remove('hidden'); }
+    
     function openEdit(i) {
         editIdx = i; const u = userData[i];
         document.getElementById('fTen').value = u.ten;
@@ -176,22 +181,34 @@
         closeModal(); render();
     }
 
-    function handleDel(i) { if(confirm("Xóa?")) { userData.splice(i, 1); render(); } }
+    function handleDel(i) { if(confirm(`Xóa ${userData[i].ten}?`)) { userData.splice(i, 1); render(); } }
     function closeModal() { document.getElementById('userModal').classList.add('hidden'); }
     function clearForm() { document.querySelectorAll('.modal-content input').forEach(i => i.value = ''); }
 
+    // 3. GỬI LỆNH ĐÈ FILE LÊN GITHUB
     async function pushGit() {
         const token = localStorage.getItem('gh_token');
         const repo = localStorage.getItem('gh_repo');
-        if(!token || !repo) return alert("Thiếu Token/Repo!");
-        const content = `const userData = ${JSON.stringify(userData, null, 4)};`;
-        const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" },
-            body: JSON.stringify({ event_type: "update-data", client_payload: { new_content: content } })
-        });
-        if(res.ok) alert("✅ Đã gửi lệnh! Đợi 30s để GitHub cập nhật.");
-        else alert("Lỗi kết nối!");
+        const status = document.getElementById('statusMsg');
+        if(!token || !repo) return alert("Vui lòng nhập Token/Repo!");
+
+        status.style.display = "block";
+        status.innerText = "⏳ Đang gửi yêu cầu ghi đè file...";
+        
+        // Nội dung mới sẽ thay thế hoàn toàn nội dung cũ trong info.js
+        const finalCode = `const userData = ${JSON.stringify(userData, null, 4)};`;
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" },
+                body: JSON.stringify({ event_type: "update-data", client_payload: { new_content: finalCode } })
+            });
+            if(res.ok) {
+                status.innerText = "✅ THÀNH CÔNG! Robot đang cập nhật file (đợi 30s).";
+                status.style.background = "#e8f5e9";
+            } else { alert("Lỗi kết nối GitHub!"); }
+        } catch(e) { alert("Lỗi mạng!"); }
     }
 </script>
 </body>
