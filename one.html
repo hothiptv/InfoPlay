@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tra Cứu Thông Minh</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #2ed573;
+            --danger: #ff4757;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .app-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .search-section { position: relative; }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); outline: none; }
+
+        /* DANH SÁCH GỢI Ý KHI GÕ */
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 10px 10px;
+            z-index: 99;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            text-align: left;
+            border-bottom: 1px solid #f9f9f9;
+        }
+
+        .suggestion-item:hover { background-color: #e7f3ff; color: var(--primary); }
+
+        .button-group { display: flex; gap: 10px; margin-top: 15px; }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-search { background: var(--primary); color: white; }
+        .btn-list { background: var(--success); color: white; }
+
+        /* POPUP THÔNG TIN */
+        #infoCard {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+
+        .card-overlay { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+
+        .card-body {
+            position: relative;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: left;
+        }
+
+        .info-row { margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+        .info-row span { color: #888; font-size: 12px; display: block; }
+        .info-row b { color: #333; font-size: 16px; }
+
+        .btn-close { background: var(--danger); color: white; width: 100%; margin-top: 10px; }
+        .hidden { display: none !important; }
+        
+        #nameListArea { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .list-item { background: #f8f9fa; padding: 8px; border-radius: 5px; cursor: pointer; border: 1px solid #ddd; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-card">
+        <h2 style="color: #333;">Tra Cứu Tên</h2>
+        
+        <div class="search-section">
+            <input type="text" id="nameInput" placeholder="Nhập chữ cái đầu (ví dụ: n)..." autocomplete="off" oninput="onTyping()">
+            
+            <div id="suggestionBox" class="autocomplete-suggestions hidden"></div>
+
+            <div class="button-group">
+                <button class="btn-search" onclick="searchName()">Tìm kiếm</button>
+                <button class="btn-list" onclick="toggleFullList()">Danh sách</button>
+            </div>
+        </div>
+
+        <div id="nameListArea" class="hidden">
+            <div id="fullList" class="list-grid"></div>
+        </div>
+
+        <div id="infoCard" class="hidden">
+            <div class="card-overlay" onclick="closeCard()"></div>
+            <div class="card-body">
+                <h3>Chi tiết</h3>
+                <div class="info-row"><span>Tên:</span> <b id="infoTen"></b></div>
+                <div class="info-row"><span>Ngày sinh:</span> <b id="infoNgay"></b></div>
+                <div class="info-row"><span>Trường:</span> <b id="infoTruong"></b></div>
+                <div class="info-row"><span>Nghề nghiệp:</span> <b id="infoNghe"></b></div>
+                <div class="info-row"><span>Sở thích:</span> <b id="infoThich"></b></div>
+                <div class="info-row"><span>Biệt danh:</span> <b id="infoBietDanh"></b></div>
+                <button class="btn-close" onclick="closeCard()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="info.js"></script>
+    <script>
+        const input = document.getElementById('nameInput');
+        const suggestionBox = document.getElementById('suggestionBox');
+
+        // Hàm xử lý khi đang gõ
+        function onTyping() {
+            const val = input.value.trim().toLowerCase();
+            suggestionBox.innerHTML = '';
+            
+            if (!val) {
+                suggestionBox.classList.add('hidden');
+                return;
+            }
+
+            // Lọc những tên có chữ cái đầu khớp với input
+            const matches = userData.filter(u => u.ten.toLowerCase().startsWith(val));
+
+            if (matches.length > 0) {
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = match.ten;
+                    // Khi ấn vào gợi ý: điền tên vào input, ẩn gợi ý và tìm luôn
+                    div.onclick = () => {
+                        input.value = match.ten;
+                        suggestionBox.classList.add('hidden');
+                        showInfo(match);
+                    };
+                    suggestionBox.appendChild(div);
+                });
+                suggestionBox.classList.remove('hidden');
+            } else {
+                suggestionBox.classList.add('hidden');
+            }
+        }
+
+        // Nhấn Enter để tìm
+        input.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                searchName();
+            }
+        });
+
+        function searchName() {
+            const val = input.value.trim().toLowerCase();
+            const result = userData.find(u => u.ten.toLowerCase() === val);
+            if (result) {
+                showInfo(result);
+                suggestionBox.classList.add('hidden');
+            } else {
+                alert("Không tìm thấy!");
+            }
+        }
+
+        function showInfo(user) {
+            document.getElementById('infoTen').innerText = user.ten;
+            document.getElementById('infoNgay').innerText = user.ngaySinh;
+            document.getElementById('infoTruong').innerText = user.truong;
+            document.getElementById('infoNghe').innerText = user.ngheNghiep;
+            document.getElementById('infoThich').innerText = user.soThich;
+            document.getElementById('infoBietDanh').innerText = user.bietDanh;
+            document.getElementById('infoCard').classList.remove('hidden');
+        }
+
+        function toggleFullList() {
+            const area = document.getElementById('nameListArea');
+            const list = document.getElementById('fullList');
+            if (area.classList.contains('hidden')) {
+                list.innerHTML = '';
+                userData.forEach(u => {
+                    const d = document.createElement('div');
+                    d.className = 'list-item';
+                    d.textContent = u.ten;
+                    d.onclick = () => { input.value = u.ten; showInfo(u); };
+                    list.appendChild(d);
+                });
+                area.classList.remove('hidden');
+            } else {
+                area.classList.add('hidden');
+            }
+        }
+
+        function closeCard() { document.getElementById('infoCard').classList.add('hidden'); }
+        
+        // Đóng gợi ý khi click ra ngoài
+        document.addEventListener('click', (e) => {
+            if (e.target !== input) suggestionBox.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
