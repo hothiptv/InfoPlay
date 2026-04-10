@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Quản Lý Info</title>
+    <style>
+        :root { --primary: #4a90e2; --success: #2ed573; --danger: #ff4757; --dark: #2f3542; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f2f6; margin: 0; padding: 15px; }
+        .container { max-width: 100%; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        h2 { color: var(--dark); font-size: 1.2rem; border-left: 4px solid var(--primary); padding-left: 10px; }
+        
+        textarea { 
+            width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; 
+            font-family: monospace; box-sizing: border-box; font-size: 13px; background: #fafafa;
+        }
+        
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; margin: 5px 0; font-size: 14px; }
+        .btn-load { background: var(--dark); }
+        .btn-add { background: var(--success); }
+        .btn-copy { background: var(--primary); margin-top: 15px; }
+
+        .table-wrapper { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 300px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+        th { background: #f8f9fa; }
+        
+        .action-btns { display: flex; gap: 5px; }
+        .action-btns button { padding: 6px; border-radius: 4px; border: none; color: white; font-size: 11px; flex: 1; }
+        .btn-edit { background: #ffa502; }
+        .btn-del { background: var(--danger); }
+
+        /* Modal cho Mobile */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 10px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-content input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; /* Chặn zoom khi gõ trên iPhone */ }
+        
+        .hidden { display: none !important; }
+        #outputCode { background: #eef2f7; color: #333; height: 150px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>1. Dán code từ file info.js</h2>
+    <textarea id="rawCode" placeholder="Dán code vào đây..."></textarea>
+    <button class="btn btn-load" onclick="parseCode()">XỬ LÝ DỮ LIỆU</button>
+
+    <div id="managerSection" class="hidden">
+        <hr>
+        <button class="btn btn-add" onclick="openModal()">+ THÊM NGƯỜI MỚI</button>
+        
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h2 style="margin-top:25px;">2. Code mới để cập nhật</h2>
+        <textarea id="outputCode" readonly></textarea>
+        <button class="btn btn-copy" onclick="copyToClipboard()">SAO CHÉP CODE</button>
+    </div>
+</div>
+
+<div id="userModal" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="margin-top:0">Thông tin</h3>
+        <input type="text" id="fTen" placeholder="Tên">
+        <input type="text" id="fNgay" placeholder="Năm sinh">
+        <input type="text" id="fTruong" placeholder="Trường">
+        <input type="text" id="fNghe" placeholder="Nghề nghiệp">
+        <input type="text" id="fThich" placeholder="Sở thích">
+        <input type="text" id="fBietDanh" placeholder="Biệt danh">
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn btn-add" style="margin:0" onclick="saveUser()">LƯU</button>
+            <button class="btn btn-del" style="margin:0; background: #999;" onclick="closeModal()">HỦY</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentData = [];
+    let editIndex = -1;
+
+    // Cách xử lý mới: Dùng regex để bóc tách mảng dữ liệu
+    function parseCode() {
+        let raw = document.getElementById('rawCode').value;
+        try {
+            // Tìm mảng bắt đầu từ [ và kết thúc là ]
+            const start = raw.indexOf('[');
+            const end = raw.lastIndexOf(']');
+            if (start === -1 || end === -1) throw new Error();
+
+            let jsonStr = raw.substring(start, end + 1);
+            
+            // Chuyển đổi từ định dạng Object JS sang JSON chuẩn để parse
+            // 1. Thêm ngoặc kép cho key, 2. Đổi ngoặc đơn thành kép
+            let validJson = jsonStr
+                .replace(/([a-zA-Z0-9_]+):/g, '"$1":') 
+                .replace(/'/g, '"')
+                .replace(/,(\s*[\}\]])/g, '$1'); // Xóa dấu phẩy thừa
+
+            currentData = JSON.parse(validJson);
+            renderTable();
+            document.getElementById('managerSection').classList.remove('hidden');
+            updateOutput();
+        } catch (e) {
+            alert("Lỗi: Không đọc được dữ liệu. Hãy dán đúng phần [ { ... } ]");
+        }
+    }
+
+    function renderTable() {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+        currentData.forEach((user, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><b>${user.ten}</b><br><small>${user.ngheNghiep}</small></td>
+                <td class="action-btns">
+                    <button class="btn-edit" onclick="editUser(${index})">Sửa</button>
+                    <button class="btn-del" onclick="deleteUser(${index})">Xóa</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openModal() {
+        editIndex = -1;
+        document.getElementById('modalTitle').innerText = "Thêm người mới";
+        clearForm();
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function editUser(index) {
+        editIndex = index;
+        const u = currentData[index];
+        document.getElementById('modalTitle').innerText = "Sửa thông tin";
+        document.getElementById('fTen').value = u.ten || "";
+        document.getElementById('fNgay').value = u.ngaySinh || "";
+        document.getElementById('fTruong').value = u.truong || "";
+        document.getElementById('fNghe').value = u.ngheNghiep || "";
+        document.getElementById('fThich').value = u.soThich || "";
+        document.getElementById('fBietDanh').value = u.bietDanh || "";
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function saveUser() {
+        const user = {
+            ten: document.getElementById('fTen').value,
+            ngaySinh: document.getElementById('fNgay').value,
+            truong: document.getElementById('fTruong').value,
+            ngheNghiep: document.getElementById('fNghe').value,
+            soThich: document.getElementById('fThich').value,
+            bietDanh: document.getElementById('fBietDanh').value
+        };
+
+        if (editIndex === -1) currentData.push(user);
+        else currentData[editIndex] = user;
+
+        closeModal();
+        renderTable();
+        updateOutput();
+    }
+
+    function deleteUser(index) {
+        if(confirm("Bạn chắc chắn muốn xóa " + currentData[index].ten + "?")) {
+            currentData.splice(index, 1);
+            renderTable();
+            updateOutput();
+        }
+    }
+
+    function updateOutput() {
+        const codeOutput = `const userData = ${JSON.stringify(currentData, null, 4)};`;
+        document.getElementById('outputCode').value = codeOutput;
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("outputCode");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); // Cho mobile
+        document.execCommand("copy");
+        alert("Đã sao chép code mới!");
+    }
+
+    function closeModal() { document.getElementById('userModal').classList.add('hidden'); }
+    function clearForm() {
+        const inputs = document.querySelectorAll('.modal-content input');
+        inputs.forEach(i => i.value = '');
+    }
+</script>
+
+</body>
+</html>
