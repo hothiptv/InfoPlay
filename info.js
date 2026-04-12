@@ -5,6 +5,6 @@ const userData = [
         truong: THCS Minh Thành,
         ngheNghiep: Học sinh,
         soThich: Chơi game,
-        bietDanh: Trọng Thuỷ
+        bietDanh: Lơn béo
     }
 ];
